@@ -27,7 +27,7 @@ for (ds_name in c('train','test')) {
   file_name = paste('X_',ds_name,'.txt',sep='')
   file_name = file.path(data_folder,zipped_folder,ds_folder,file_name)
   print(file_name)
-  print(read.table(file_name, nrows=3) %>% head())
+  print(read.table(file_name, nrows=3) %>% names())
 }
 
 
