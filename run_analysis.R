@@ -7,8 +7,8 @@ library(dplyr)
 url = 'https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip'
 target_file = file.path('data','datasets.zip')
 
-if (file.exists(target_file)){
-  #download.file(url,target_file)
+if (!file.exists(target_file)){
+  download.file(url,target_file)
   date_downloaded <- date()
   print(paste('Downloaded timestamp: ',date_downloaded))
   print(paste("Unzipping the ", target_file,"...->"))
@@ -20,9 +20,21 @@ if (file.exists(target_file)){
 
 
 # load the data
+for (ds_name in c('train','test')) {
+  data_folder = "data"
+  zipped_folder = "UCI HAR Dataset"
+  ds_folder = ds_name
+  file_name = paste('X_',ds_name,'.txt',sep='')
+  file_name = file.path(data_folder,zipped_folder,ds_folder,file_name)
+  print(file_name)
+  print(read.table(file_name, nrows=3) %>% head())
+}
+
+
 
 # Run & Analyze 
 ## 1.Merges the training and the test sets to create one data set.
+
 
 ## 2. Extracts only the measurements on the mean and standard deviation for each measurement. 
 
