@@ -49,7 +49,7 @@ for ( file_id  in seq(dim(unzip_list)[1])) {
                     'merged',
                     substr(dirname(train_file_name),6,nchar(train_file_name)),
   )
-  print(merged_path)
+  #print(merged_path)
   merged_file_name <- file.path('merged',merged_path,
                                 unzip_list[[file_id,1]]
   )
@@ -77,11 +77,19 @@ for ( file_id  in seq(dim(unzip_list)[1])) {
 
 ## 2. Extracts only the measurements on the mean and standard deviation for each measurement. 
 # - what is the measurement observersion, mean, std
+features_file_name <- 'data/UCI HAR Dataset/features.txt'
+features_dt <-fread(features_file_name) %>%  # load features.txt
+  filter(grepl('-mean\\(\\)|-std\\(\\)',V2)) %>%  # filter only mean and std measurement 
+  mutate(V2=tolower(V2)) # tolower
 
 ## 3. Uses descriptive activity names to name the activities in the data set
 # - what is the activity name descriptive
 ## 4. Appropriately labels the data set with descriptive variable names. 
 # - what is the appropriately name
+
+merged_X <- fread('merged/UCI HAR Dataset/merged/X_merged.txt') %>% 
+  select(c(features_dt$V1))%>%  # select only mean and std features
+  setnames(names(.),c(features_dt$V2)) # rename var_name
 
 ## 5. From the data set in step 4, creates a second, independent tidy data set with the average of each variable for each activity and each subject.
 # average of activity
