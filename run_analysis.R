@@ -1,96 +1,149 @@
 # preload the library
+
 library(tidyr)
 library(dplyr)
 library(data.table)
 library(stringr)
 
-# download the data
-url = 'https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip'
-target_file = file.path('data','datasets.zip')
-is_DEBUG = FALSE
-sample_n = 10
 
-if (!file.exists(target_file)){
-  download.file(url,target_file)
-  date_downloaded <- date()
-  print(paste('Downloaded timestamp: ',date_downloaded))
-  print(paste("Unzipping the ", target_file,"...->"))
+
+
+
+get_merged_data<- function(n_sample=10, is_DEBUG=FALSE) {
+  # n_sample  # set to 10 for read 10rows as sample perfile while developing and debugging period.
+  # step 1. download and decompress the data
   
-  print(unzip_list)
-  unzip(target_file, exdir='data')
-  print("unzip finished")
+  target_file = file.path('data','datasets.zip')
+  if (!file.exists(target_file)){
+    url = 'https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip'
+    
+    download.file(url,target_file)
+    date_downloaded <- date()
+    print(paste('Downloaded timestamp: ',date_downloaded))
+    print(paste("Unzipping the ", target_file,"...->"))
+    
+    print(unzip_list)
+    unzip(target_file, exdir='data')
+    print("unzip finished")
+  }
+  
+  
+  # save the result of average of variable based on group of subjects, activities sepearte
+  save_average_results<-function(activities_avg,subjects_avg){
+    export_path = "data/UCI HAR Dataset/merged"
+    activities_average_measurement_basename = 'activities_average_measurement.txt'
+    subjects_average_measurement_basename = 'subjects_average_measurement.txt'
+    
+    if (!dir.exists(export_path)){
+      dir.create(export_path,recursive = TRUE)
+    }
+    activities_average_measurement_pathname = file.path(export_path, 
+                                                        activities_average_measurement_basename
+    )
+    subjects_average_measurement_pathname = file.path(export_path, 
+                                                      subjects_average_measurement_basename
+    )
+    activities_avg %>% fwrite(activities_average_measurement_pathname,yaml=TRUE)
+    subjects_avg %>% fwrite(subjects_average_measurement_pathname,yaml=TRUE)
+  }
+  
+  
+  
+  
+  # step 2 load feature, activities data. It will be used by X, Y datasets at following steps. 
+  features <- fread("data/UCI HAR Dataset/features.txt", col.names = c("feature_id","feature_name"), nrows =Inf)
+  activities <- fread("data/UCI HAR Dataset/activity_labels.txt", col.names = c("label", "activity_name"), nrows =Inf)
+  
+  # step 3 load subject, X, Y datasets from train and test folders and merged separately.
+  ## step 3.1 load & merge subject dataset
+  subject_train_dt <- fread("data/UCI HAR Dataset/train/subject_train.txt", col.names = "subject_id", nrows =n_sample)
+  subject_test_dt <- fread("data/UCI HAR Dataset/test/subject_test.txt", col.names = "subject_id", nrows =n_sample)
+  subject_dt <- rbind(subject_train_dt, subject_test_dt)
+  
+  # step 3.2 load and merge X dataset. 
+  ## While fread the txt, the x dataset columns name was renamed with feature_name according to feature dataset.
+  x_train_dt <- fread("data/UCI HAR Dataset/train/X_train.txt", col.names = features$feature_name, nrows =n_sample)
+  x_test_dt <- fread("data/UCI HAR Dataset/test/X_test.txt", col.names = features$feature_name, nrows =n_sample)
+  x_dt <- rbind(x_train_dt, x_test_dt) 
+  
+  
+  # step 3.3 load and merge Y dataset
+  ## the activity names was added accouring to the label in activites dataset. 
+  y_train_dt <- fread("data/UCI HAR Dataset/train/y_train.txt", col.names = "label", nrows =n_sample)
+  y_test_dt <- fread("data/UCI HAR Dataset/test/y_test.txt", col.names = "label", nrows =n_sample)
+  y_dt <- rbind(y_train_dt, y_test_dt) %>% inner_join(activities,by='label') 
+
+  # step 4 combine Subject, Y, and X dataset together into all in one combined dataset
+  combined_dt <- cbind(subject_dt, y_dt, x_dt)
+  
+  combined_dt
 }
 
-# make merged_file name list
-unzip_list <- unzip(target_file, exdir='data',list=TRUE) %>% 
-  select(Name, Length) %>%
-  mutate(
-    Name=file.path('data',Name),
-    need_merged=grepl('train.txt|test.txt',Name), 
-         merged_type=str_extract(Name,'train.txt|test.txt'),
-         merged_name=sub('(_train)|(_test)','_merged',basename(Name))
-         ) %>% 
-  filter(need_merged) %>%
-  pivot_wider(merged_name,names_from=merged_type,values_from=Name)
-
-# Run & Analyze 
-## 1.Merges the training and the test sets to create one data set.
-print("--------Start Merging traing and test file into merged files")
-for ( file_id  in seq(dim(unzip_list)[1])) {
-  #for ( file_id  in seq(5)) {
-  merged_path = 'merged'
-  if (!dir.exists(merged_path)) {
-    dir.create(merged_path)
-  }
-  test_file_name <- unzip_list[[file_id,2]]
-  train_file_name <- unzip_list[[file_id,3]]
-  dirname(train_file_name)
-  merged_path = sub('train',
-                    'merged',
-                    substr(dirname(train_file_name),6,nchar(train_file_name)),
-  )
-  #print(merged_path)
-  merged_file_name <- file.path('merged',merged_path,
-                                unzip_list[[file_id,1]]
-  )
-  if (is_DEBUG){
-    message <- paste(merged_file_name,'from',train_file_name,'-',test_file_name)
-  } else {
-    message <- paste(merged_file_name)
-  }
+# get_descriptive_df function purpose is to create description varaible vector
+## input  : data.frame or data.table which generated from get_combined_data stage
+## ouput  : a descriptive character vector which easy to understand and no abbreviation
+## proess : using pipeline to translater abbreviation to full description.
+get_descriptive_name<- function(df){
   
-  #load train & test dataset, and create new column ds_type
-  ## 1 for train dataset,
-  ## 2 for test dataset
-  train_dt <- fread(train_file_name, nrow=sample_n) %>%
-    mutate(ds_type=1, id=row_number())
-  test_dt <- fread(test_file_name, nrow=sample_n) %>%
-    mutate(ds_type=2, id=row_number())
-  target_dir = dirname(merged_file_name)
-  if(!dir.exists(target_dir)){
-    dir.create(target_dir,recursive = TRUE)
-  }
-  rbind(train_dt,test_dt) %>% fwrite(merged_file_name)
+  # Do nothing at begining
+  abbreviate_name <- names(df)
+  # descriptiive task list
+  descriptive_name <- abbreviate_name %>%
+    gsub(pattern="^t", replacement="Time") %>%
+    gsub(pattern="^f", replacement="Frequency") %>%
+    gsub(pattern="tBody", replacement="TimeBody") %>%
+    gsub(pattern="fBody", replacement="FrequencyBody") %>%
+    gsub(pattern="-mean\\(\\)", replacement="Mean") %>%
+    gsub(pattern="-std\\(\\)", replacement="STD") %>%
+    gsub(pattern="Freq\\(\\)", replacement="Frequency") %>%
+    gsub(pattern="Acc", replacement="Accelerometer") %>%
+    gsub(pattern="BodyBody", replacement="Body") %>%
+    gsub(pattern="Gyro", replacement="Gyroscope") %>%
+    gsub(pattern="Mag", replacement="Magnitude") %>%
+    gsub(pattern="gravity", replacement="Gravity")
   
-  print(message)
+  # below code for angle of two vectors variable only.
+  # it should be process at end of descriptive process.
+  descriptive_name <- descriptive_name %>%
+    gsub(pattern="angle\\(", replacement="Angle") %>%  
+    gsub(pattern=",", replacement="") %>%  
+    gsub(pattern="\\)", replacement="") 
+    
+  descriptive_name
 }
 
-## 2. Extracts only the measurements on the mean and standard deviation for each measurement. 
-# - what is the measurement observersion, mean, std
-features_file_name <- 'data/UCI HAR Dataset/features.txt'
-features_dt <-fread(features_file_name) %>%  # load features.txt
-  filter(grepl('-mean\\(\\)|-std\\(\\)',V2)) %>%  # filter only mean and std measurement 
-  mutate(V2=tolower(V2)) # tolower
+# 1. Merges the training and the test sets to create one data set.
+## by sef defined function get_merged_data()
+combined_dt <- get_merged_data()
 
-## 3. Uses descriptive activity names to name the activities in the data set
-# - what is the activity name descriptive
+# 2. Extracts only the measurements on the mean and standard deviation for each measurement. 
+filtered_dt <- combined_dt %>% 
+  select(subject_id, label,activity_name, contains("mean"), contains("std"))
+
+# 3. Uses descriptive activity names to name the activities in the data set
+# it has been completed in get_merged_data process. 
+# the filtered_dt$activity_name is the activity name.
+
+original_name <- names(filtered_dt)
 ## 4. Appropriately labels the data set with descriptive variable names. 
-# - what is the appropriately name
-
-merged_X <- fread('merged/UCI HAR Dataset/merged/X_merged.txt') %>% 
-  select(c(features_dt$V1))%>%  # select only mean and std features
-  setnames(names(.),c(features_dt$V2)) # rename var_name
+# do it by define get_descriptive_name, apply the function to names(filtered_dt)
+descriptive_name <- filtered_dt %>% get_descriptive_name()
+names(filtered_dt) <-descriptive_name
+# code_book <- cbind(descriptive_name,'meaning of',original_name) 
+# code_book %>%fwrite('code_book.txt')
 
 ## 5. From the data set in step 4, creates a second, independent tidy data set with the average of each variable for each activity and each subject.
-# average of activity
-# average of subject
+## 5.1 average of activity
+activities_avg <- filtered_dt %>% 
+  select(-subject_id, -label)%>%
+  group_by(activity_name) %>% 
+  summarise_all(.funs=mean)
+
+## 5.2 average of subject
+subjects_avg <- filtered_dt %>% 
+  select(-label,-activity_name)%>%
+  group_by(subject_id) %>% 
+  summarise_all(.funs=mean)
+
+## 6 save average result of activities, subjects
+save_average_results(activities_avg, subjects_avg)
