@@ -156,6 +156,3 @@ subjects_avg <- filtered_dt %>%
 
 ## 6 save average result of activities, subjects
 save_average_results(activities_avg, subjects_avg)
-
-Notes:
-3. There must a a section called "code book" that describes each variables and ites unites.
