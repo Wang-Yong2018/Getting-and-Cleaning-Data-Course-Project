@@ -1,4 +1,4 @@
-# preload the library
+# pre-load the library
 
 library(tidyr)
 library(dplyr)
@@ -8,13 +8,13 @@ library(stringr)
 
 
 ##-----------------------------------------------------------------------------
-## Function defination
+## Function definition
 ## get_merged_data(n_sample=10， is_DEBUG=FALSE)
 ## get_descriptive_name(df)
 ## save_average_result(average_df)
 ##-----------------------------------------------------------------------------
 get_merged_data<- function(n_sample=10, is_DEBUG=FALSE) {
-  # n_sample  # set to 10 for read 10rows as sample perfile while developing and
+  # n_sample  # set to 10 for read 10rows as sample per file while developing and
   # debugging period.
   # step 1. download and decompress the data
   
@@ -41,9 +41,9 @@ get_merged_data<- function(n_sample=10, is_DEBUG=FALSE) {
                       col.names = c("label", "activity_name"), 
                       nrows =Inf)
   
-  # step 3 load subject, X, Y datasets from train and test folders and merged 
+  # step 3 load subject, X, Y data sets from train and test folders and merged 
   #        separately.
-  ## step 3.1 load & merge subject dataset
+  ## step 3.1 load & merge subject data set
   subject_train_dt <- fread("data/UCI HAR Dataset/train/subject_train.txt", 
                             col.names = "subject_id", 
                             nrows =n_sample)
@@ -76,7 +76,7 @@ get_merged_data<- function(n_sample=10, is_DEBUG=FALSE) {
   y_dt <- rbind(y_train_dt, y_test_dt) %>% inner_join(activities,by='label') 
 
   # step 4 combine Subject, Y, and X dataset together into all in one 
-  #        combined dataset
+  #        combined data set
   combined_dt <- cbind(subject_dt, y_dt, x_dt)
   
   combined_dt
@@ -89,9 +89,9 @@ get_merged_data<- function(n_sample=10, is_DEBUG=FALSE) {
 ## process : using pipeline to translate abbreviation to full description.
 get_descriptive_name<- function(df){
   
-  # Do nothing at begining
+  # Do nothing at beginning
   abbreviate_name <- names(df)
-  # descriptiive task list
+  # descriptive task list
   descriptive_name <- abbreviate_name %>%
     gsub(pattern="^t", replacement="Time") %>%
     gsub(pattern="^f", replacement="Frequency") %>%
