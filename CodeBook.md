@@ -1,9 +1,33 @@
-# CodeBook
+==================================================================
+Get and clean data course assignment
+According to the assignment requirement collect and clean the data source to tidy data.
+input: assigment requirement
+output:
+  - run_analysis.R
+  - CodeBook.md
+  - readme
 
+data source name: Human Activity Recognition Using Smartphones Dataset
+data source url : https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip'
+Version 0.1
+==================================================================
+
+# CodeBook
+# files
+1. activities_average_measurement.txt
+independent tidy data set with the average of each variable for each activity
+2. subjects_average_measurement.txt
+independent tidy data set with the average of each variable for each subject.
+
+# Variables
+---------------------------------------------------------------------------------
 "descriptive_name"                                    "description"
-subject_id                                            The identifier of subject_id                                           
-label                                                 The label of activity
-activity_name                                         The name of  activity                                        
+---------------------------------------------------------------------------------
+subject_id                                            The subject identifier of volunteer (1-30)(only in file subjects_average_measurement.txt)                        
+label                                                 The label of activity subject performed (1,2,3,4,5,6,) (only in file activities_average_measurement.txt)
+activity_name                                         The name of activity subject performed (WALKING ,WALKING_UPSTAIRS ,WALKING_DOWNSTAIRS ,SITTING ,STANDING ,LAYING
+) (only in file activities_average_measurement.txt) 
+
 TimeBodyAccelerometerMean-X                           average of tBodyAcc-mean()-X                                    
 TimeBodyAccelerometerMean-Y                           average of tBodyAcc-mean()-Y                                    
 TimeBodyAccelerometerMean-Z                           average of tBodyAcc-mean()-Z                                    
@@ -91,9 +115,9 @@ FrequencyBodyAccelerometerJerkMagnitudeSTD            average of fBodyBodyAccJer
 FrequencyBodyGyroscopeMagnitudeSTD                    average of fBodyBodyGyroMag-std()                               
 FrequencyBodyGyroscopeJerkMagnitudeSTD                average of fBodyBodyGyroJerkMag-std()                           
 
-    
-    
+
 ## Summary choices
+NOT AVAILABLE
 
 ## Study design
 
