@@ -43,8 +43,8 @@ get_merged_data<- function(n_sample=10, is_DEBUG=FALSE) {
     subjects_average_measurement_pathname = file.path(export_path, 
                                                       subjects_average_measurement_basename
     )
-    activities_avg %>% fwrite(activities_average_measurement_pathname,yaml=TRUE)
-    subjects_avg %>% fwrite(subjects_average_measurement_pathname,yaml=TRUE)
+    activities_avg %>% fwrite(activities_average_measurement_pathname,yaml=FALSE)
+    subjects_avg %>% fwrite(subjects_average_measurement_pathname,yaml=FALSE)
   }
   
   
@@ -114,7 +114,7 @@ get_descriptive_name<- function(df){
 
 # 1. Merges the training and the test sets to create one data set.
 ## by sef defined function get_merged_data()
-combined_dt <- get_merged_data()
+combined_dt <- get_merged_data(n_sample = Inf)
 
 # 2. Extracts only the measurements on the mean and standard deviation for each measurement. 
 filtered_dt <- combined_dt %>% 
@@ -145,5 +145,7 @@ subjects_avg <- filtered_dt %>%
   group_by(subject_id) %>% 
   summarise_all(.funs=mean)
 
+print(dim(filtered_dt))
 ## 6 save average result of activities, subjects
+
 save_average_results(activities_avg, subjects_avg)
