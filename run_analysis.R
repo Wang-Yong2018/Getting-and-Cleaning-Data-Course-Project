@@ -43,8 +43,8 @@ get_merged_data<- function(n_sample=10, is_DEBUG=FALSE) {
     subjects_average_measurement_pathname = file.path(export_path, 
                                                       subjects_average_measurement_basename
     )
-    activities_avg %>% fwrite(activities_average_measurement_pathname,yaml=FALSE)
-    subjects_avg %>% fwrite(subjects_average_measurement_pathname,yaml=FALSE)
+    activities_avg %>% write.table(activities_average_measurement_pathname,row.name=FALSE)
+    subjects_avg %>% write.table(subjects_average_measurement_pathname,row.name=FALSE)
   }
   
   
